@@ -1,0 +1,37 @@
+{
+  "description": "Standard signal types selectable when assigning a pin to a net. Users can still type a custom net name — this list just pre-fills common ones so naming stays consistent across projects and part-library imports.",
+  "standardTypes": [
+    { "type": "GND",              "label": "Ground / Common Ground",     "defaultColor": "#000000" },
+    { "type": "12V_SUPPLY",       "label": "12V Battery Supply",         "defaultColor": "#8B0000" },
+    { "type": "5V_SUPPLY",        "label": "5V Sensor Supply",           "defaultColor": "#FF0000" },
+    { "type": "IGNITION_ON",      "label": "Ignition / Key On",          "defaultColor": "#FFA500" },
+    { "type": "THROTTLE_SIGNAL_A","label": "Throttle Signal A",          "defaultColor": "#00AEEF" },
+    { "type": "THROTTLE_SIGNAL_B","label": "Throttle Signal B",          "defaultColor": "#7CFC00" },
+    { "type": "BRAKE_SIGNAL",     "label": "Brake Switch Signal",        "defaultColor": "#FFFF00" },
+    { "type": "HORN",             "label": "Horn",                        "defaultColor": "#A0522D" },
+    { "type": "TURN_SIGNAL_L",    "label": "Turn Signal - Left",         "defaultColor": "#008000" },
+    { "type": "TURN_SIGNAL_R",    "label": "Turn Signal - Right",        "defaultColor": "#FF69B4" },
+    { "type": "HEADLIGHT",        "label": "Headlight",                   "defaultColor": "#A9A9A9" },
+    { "type": "TAILLIGHT_BRAKE",  "label": "Taillight / Brake Light",    "defaultColor": "#DC143C" },
+    { "type": "CAN_H",            "label": "CAN Bus High",                "defaultColor": "#4B0082" },
+    { "type": "CAN_L",            "label": "CAN Bus Low",                 "defaultColor": "#9370DB" },
+    { "type": "SPEED_SENSOR",     "label": "Speed Sensor Signal",        "defaultColor": "#40E0D0" },
+    { "type": "DISPLAY_DATA",     "label": "Display Data Line",          "defaultColor": "#DAA520" },
+    { "type": "MOTOR_PHASE_U",    "label": "Motor Phase U",              "defaultColor": "#1E90FF" },
+    { "type": "MOTOR_PHASE_V",    "label": "Motor Phase V",              "defaultColor": "#FF7F50" },
+    { "type": "MOTOR_PHASE_W",    "label": "Motor Phase W",              "defaultColor": "#6A5ACD" },
+    { "type": "MOTOR_HALL_A",     "label": "Motor Hall Sensor A",        "defaultColor": "#20B2AA" },
+    { "type": "MOTOR_HALL_B",     "label": "Motor Hall Sensor B",        "defaultColor": "#BA55D3" },
+    { "type": "MOTOR_HALL_C",     "label": "Motor Hall Sensor C",        "defaultColor": "#CD5C5C" },
+    { "type": "MOTOR_TEMP_SENSOR","label": "Motor Temperature Sensor",   "defaultColor": "#556B2F" },
+    { "type": "BATTERY_POSITIVE", "label": "Battery Pack Positive",      "defaultColor": "#B22222" },
+    { "type": "BATTERY_NEGATIVE", "label": "Battery Pack Negative",      "defaultColor": "#2F4F4F" },
+    { "type": "CONTACTOR_COIL",   "label": "Main Contactor Coil",        "defaultColor": "#DA70D6" },
+    { "type": "KILL_SWITCH",      "label": "Kill Switch",                "defaultColor": "#B03060" },
+    { "type": "SIDESTAND_SWITCH", "label": "Sidestand / Kickstand Switch","defaultColor": "#8FBC8F" },
+    { "type": "REGEN_BRAKE_SIGNAL","label": "Regen Brake Signal",        "defaultColor": "#FFD700" },
+    { "type": "CHARGE_PORT",      "label": "Charge Port",                "defaultColor": "#32CD32" },
+    { "type": "CUSTOM",           "label": "Custom / user-defined",      "defaultColor": null }
+  ]
+}
+

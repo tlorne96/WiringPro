@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WiringPro Project",
+  "type": "object",
+  "required": ["id", "name", "connectors", "nets", "createdAt", "updatedAt"],
+  "properties": {
+    "id": { "type": "string", "description": "UUID, generated on creation" },
+    "name": { "type": "string" },
+    "vehicle": { "type": "string", "description": "e.g. 'Surron Light Bee X'" },
+    "notes": { "type": "string" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "connectors": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/connector" }
+    },
+    "nets": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/net" }
+    }
+  },
+  "definitions": {
+    "connector": {
+      "type": "object",
+      "required": ["id", "label", "rows", "pins"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string", "description": "e.g. 'Main 24-pin', 'Throttle 6-pin'" },
+        "partRef": { "type": ["string", "null"], "description": "id of a part-library entry, if imported" },
+        "rows": {
+          "type": "array",
+          "description": "One entry per physical row, so odd/staggered pin counts per row are supported",
+          "items": { "type": "integer", "minimum": 1 }
+        },
+        "pins": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/pin" }
+        }
+      }
+    },
+    "pin": {
+      "type": "object",
+      "required": ["id", "index", "row", "col"],
+      "properties": {
+        "id": { "type": "string" },
+        "index": { "type": "integer", "description": "1-based pin number as printed/silkscreened on the connector" },
+        "row": { "type": "integer", "description": "0-based row this pin sits in" },
+        "col": { "type": "integer", "description": "0-based position within that row" },
+        "netId": { "type": ["string", "null"], "description": "id of the Net this pin is assigned to, or null if unassigned" },
+        "label": { "type": "string", "description": "optional freeform note, e.g. 'grey wire'" }
+      }
+    },
+    "net": {
+      "type": "object",
+      "required": ["id", "name", "pinRefs"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "description": "e.g. 'GND', '5V_SUPPLY', 'THROTTLE_A'" },
+        "color": { "type": "string", "description": "hex color used consistently for this net in the diagram" },
+        "pinRefs": {
+          "type": "array",
+          "description": "every (connectorId, pinId) pair carrying this signal",
+          "items": {
+            "type": "object",
+            "required": ["connectorId", "pinId"],
+            "properties": {
+              "connectorId": { "type": "string" },
+              "pinId": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

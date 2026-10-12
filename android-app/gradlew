@@ -1,0 +1,21 @@
+#!/bin/sh
+# Minimal Gradle wrapper launcher. Locates gradle-wrapper.jar next to this
+# script and delegates to it. Missing the jar itself? See README-VSCODE.md —
+# it has to be fetched once with network access, which this environment
+# didn't have when this file was generated.
+DIR="$(cd "$(dirname "$0")" && pwd)"
+CLASSPATH="$DIR/gradle/wrapper/gradle-wrapper.jar"
+
+if [ ! -f "$CLASSPATH" ]; then
+  echo "gradle-wrapper.jar is missing — see README-VSCODE.md for the one-time fix." >&2
+  exit 1
+fi
+
+if [ -n "$JAVA_HOME" ]; then
+  JAVACMD="$JAVA_HOME/bin/java"
+else
+  JAVACMD="java"
+fi
+
+exec "$JAVACMD" -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"
+

@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "WiringPro Part Library Entry",
+  "type": "object",
+  "required": ["id", "category", "name", "connector"],
+  "properties": {
+    "id": { "type": "string" },
+    "category": {
+      "type": "string",
+      "enum": ["throttle", "display", "brake-sensor", "ignition", "12v-converter", "controller", "motor", "battery-bms", "other"]
+    },
+    "name": { "type": "string", "description": "e.g. 'Surron stock thumb throttle (6-pin)'" },
+    "manufacturer": { "type": "string" },
+    "notes": { "type": "string" },
+    "connector": {
+      "description": "Same shape as a project connector minus netId assignments, since parts are reusable templates",
+      "type": "object",
+      "required": ["label", "rows", "pins"],
+      "properties": {
+        "label": { "type": "string" },
+        "rows": { "type": "array", "items": { "type": "integer" } },
+        "pins": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["index", "row", "col"],
+            "properties": {
+              "index": { "type": "integer" },
+              "row": { "type": "integer" },
+              "col": { "type": "integer" },
+              "suggestedLabel": { "type": "string", "description": "e.g. 'Signal A', 'Ground', 'VCC 5V' — pre-fills when this part is imported" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

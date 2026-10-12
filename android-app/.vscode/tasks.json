@@ -1,0 +1,35 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build debug APK",
+      "type": "shell",
+      "command": "./gradlew assembleDebug",
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Install to connected device",
+      "type": "shell",
+      "command": "./gradlew installDebug",
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build & install",
+      "dependsOrder": "sequence",
+      "dependsOn": ["Build debug APK", "Install to connected device"],
+      "problemMatcher": []
+    },
+    {
+      "label": "View logs (WiringPro)",
+      "type": "shell",
+      "command": "adb logcat --pid=$(adb shell pidof -s com.timlorne.wiringpro)",
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    }
+  ]
+}
+
