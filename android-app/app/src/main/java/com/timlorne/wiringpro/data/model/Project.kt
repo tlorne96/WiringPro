@@ -33,6 +33,7 @@ data class Net(
     val id: String,
     val name: String,          // e.g. "GND", "THROTTLE_A"
     val color: String? = null,
+    val stripeColor: String? = null,
     val pinRefs: List<PinRef> = emptyList()
 )
 

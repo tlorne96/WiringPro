@@ -52,7 +52,8 @@ data class NetEntity(
     val projectId: String,
     val name: String,          // e.g. "GND", "Throttle A"
     val netType: String,       // one of StandardNetTypes, or "CUSTOM"
-    val color: String?
+    val color: String?,
+    val stripeColor: String? = null
 )
 
 @Entity(

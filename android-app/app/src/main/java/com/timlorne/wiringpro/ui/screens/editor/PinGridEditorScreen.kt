@@ -50,6 +50,10 @@ class PinGridEditorViewModel(
     fun clear(pinId: String) {
         viewModelScope.launch { repository.clearPinNet(pinId) }
     }
+
+    fun updateNetColors(netId: String, color: String?, stripeColor: String?) {
+        viewModelScope.launch { repository.updateNetColors(netId, color, stripeColor) }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,10 +81,15 @@ fun PinGridEditorScreen(viewModel: PinGridEditorViewModel) {
     tappedPin?.let { pin ->
         NetPickerDialog(
             existingNets = netsWithAssignments,
+            selectedNet = pin.netId?.let { id -> netsWithAssignments.firstOrNull { it.net.id == id }?.net },
+            pinLabel = pin.label,
             onDismiss = { tappedPin = null },
             onSelectExisting = { net ->
                 viewModel.assignExisting(pin.id, net)
                 tappedPin = null
+            },
+            onUpdateNetColors = { netId, color, stripeColor ->
+                viewModel.updateNetColors(netId, color, stripeColor)
             },
             onCreateNew = { name, netType, color ->
                 viewModel.assignNew(pin.id, name, netType, color)

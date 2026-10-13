@@ -14,6 +14,8 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import androidx.room.Update
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
 // ---------------------------------------------------------------------
@@ -116,6 +118,9 @@ interface NetDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(net: NetEntity)
 
+    @Query("UPDATE nets SET color = :color, stripeColor = :stripeColor WHERE id = :netId")
+    suspend fun updateWireColors(netId: String, color: String?, stripeColor: String?)
+
     @Query("SELECT * FROM nets WHERE projectId = :projectId")
     fun observeForProject(projectId: String): Flow<List<NetEntity>>
 
@@ -129,7 +134,7 @@ interface NetDao {
 
 @Database(
     entities = [ProjectEntity::class, ConnectorEntity::class, PinEntity::class, NetEntity::class],
-    version = 2, // bumped when imagePath was added to ProjectEntity — see fallbackToDestructiveMigration below
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -140,6 +145,18 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun netDao(): NetDao
 
     companion object {
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE projects ADD COLUMN imagePath TEXT")
+            }
+        }
+
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE nets ADD COLUMN stripeColor TEXT")
+            }
+        }
+
         @Volatile private var instance: AppDatabase? = null
 
         fun getInstance(context: Context): AppDatabase =
@@ -149,10 +166,8 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "wiringpro.db"
                 )
-                    // No migrations written yet — this is a prototype-phase
-                    // tradeoff, not an oversight. Once schema changes stop
-                    // being frequent, replace this with real Migration
-                    // objects so upgrades don't wipe local data.
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    // Retain the fallback for development builds with unknown older schemas.
                     .fallbackToDestructiveMigration()
                     .build().also { instance = it }
             }

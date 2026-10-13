@@ -69,7 +69,13 @@ class WiringRepository(private val db: AppDatabase) {
      * row 1/col 0, and so on. This is the one place that numbering logic
      * lives — don't duplicate it in the UI layer.
      */
-    suspend fun createConnector(projectId: String, label: String, rows: List<Int>): String {
+    suspend fun createConnector(
+        projectId: String,
+        label: String,
+        rows: List<Int>,
+        partRef: String? = null,
+        pinLabels: List<String?> = emptyList()
+    ): String {
         val connectorId = UUID.randomUUID().toString()
         db.connectorDao().upsert(
             ConnectorEntity(
@@ -77,7 +83,7 @@ class WiringRepository(private val db: AppDatabase) {
                 projectId = projectId,
                 label = label,
                 rows = rows,
-                partRef = null
+                partRef = partRef
             )
         )
 
@@ -93,7 +99,7 @@ class WiringRepository(private val db: AppDatabase) {
                         row = row,
                         col = col,
                         netId = null,
-                        label = null
+                        label = pinLabels.getOrNull(pinIndex - 1)
                     )
                 )
                 pinIndex++
@@ -155,15 +161,34 @@ class WiringRepository(private val db: AppDatabase) {
      * the same net name to five different pins reuses one NetEntity instead
      * of creating five disconnected ones.
      */
-    suspend fun getOrCreateNet(projectId: String, name: String, netType: String, color: String?): String {
+    suspend fun getOrCreateNet(
+        projectId: String,
+        name: String,
+        netType: String,
+        color: String?,
+        stripeColor: String? = null
+    ): String {
         db.netDao().findByName(projectId, name)?.let { return it.id }
         val id = UUID.randomUUID().toString()
-        db.netDao().upsert(NetEntity(id = id, projectId = projectId, name = name, netType = netType, color = color))
+        db.netDao().upsert(
+            NetEntity(
+                id = id,
+                projectId = projectId,
+                name = name,
+                netType = netType,
+                color = color,
+                stripeColor = stripeColor
+            )
+        )
         return id
     }
 
     suspend fun assignPinToNet(pinId: String, netId: String?) {
         db.pinDao().assignNet(pinId, netId)
+    }
+
+    suspend fun updateNetColors(netId: String, color: String?, stripeColor: String?) {
+        db.netDao().updateWireColors(netId, color, stripeColor)
     }
 
     suspend fun clearPinNet(pinId: String) {

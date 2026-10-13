@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.timlorne.wiringpro.data.db.ConnectorEntity
@@ -87,11 +88,26 @@ private fun PinCell(pin: PinEntity, net: NetEntity?, onClick: () -> Unit) {
                 textAlign = TextAlign.Center
             )
             Text(
-                text = net?.name ?: "—",
+                text = net?.name ?: pin.label?.substringBefore(" | ") ?: "—",
                 style = MaterialTheme.typography.labelSmall,
                 textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 color = if (net != null) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
             )
+            if (net != null) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(Modifier.size(width = 12.dp, height = 3.dp).background(assignedColor ?: borderColor))
+                    net.stripeColor?.let { stripeHex ->
+                        val stripe = runCatching { Color(android.graphics.Color.parseColor(stripeHex)) }
+                            .getOrNull()
+                        if (stripe != null) Box(Modifier.size(width = 12.dp, height = 3.dp).background(stripe))
+                    }
+                }
+            }
         }
     }
 }

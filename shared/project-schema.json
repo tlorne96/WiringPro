@@ -57,6 +57,7 @@
         "id": { "type": "string" },
         "name": { "type": "string", "description": "e.g. 'GND', '5V_SUPPLY', 'THROTTLE_A'" },
         "color": { "type": "string", "description": "hex color used consistently for this net in the diagram" },
+        "stripeColor": { "type": ["string", "null"], "description": "optional hex tracer-stripe color for this wire" },
         "pinRefs": {
           "type": "array",
           "description": "every (connectorId, pinId) pair carrying this signal",
