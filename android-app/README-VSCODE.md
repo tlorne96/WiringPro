@@ -8,7 +8,7 @@ Gradle's servers, which this scaffolding script didn't have access to.
 Fix it once, from this `android-app/` folder, with either:
 
 - **You have Gradle installed** (`brew install gradle`, `sdk install gradle`, etc):
-  run `gradle wrapper --gradle-version 8.5` — it downloads the real jar
+  run `gradle wrapper --gradle-version 8.13` — it downloads the real jar
   into `gradle/wrapper/`.
 - **You don't**: open this folder in Android Studio once — it generates
   the wrapper automatically on import — then go back to VS Code for

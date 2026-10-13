@@ -141,7 +141,7 @@ fun NetPickerDialog(
         NetColorDialog(
             net = selectedNet,
             onDismiss = { editingColor = false },
-            onSave = { color ->
+            onSave = { color, stripeColor ->
                 onUpdateNetColors(selectedNet.id, color, stripeColor)
                 editingColor = false
             }

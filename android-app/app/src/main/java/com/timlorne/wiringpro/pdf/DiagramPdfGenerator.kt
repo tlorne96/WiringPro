@@ -130,7 +130,7 @@ object DiagramPdfGenerator {
             val dotPaint = Paint().apply { this.color = color; style = Paint.Style.FILL }
             points.forEach { canvas.drawCircle(it.x, trunkY, 3f, dotPaint) }
             val labelPaint = Paint().apply {
-                color = Color.BLACK
+                this.color = Color.BLACK
                 textSize = 10f
                 isFakeBoldText = true
             }

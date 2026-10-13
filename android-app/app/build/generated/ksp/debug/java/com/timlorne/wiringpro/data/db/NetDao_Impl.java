@@ -8,6 +8,7 @@ import androidx.room.CoroutinesRoom;
 import androidx.room.EntityInsertionAdapter;
 import androidx.room.RoomDatabase;
 import androidx.room.RoomSQLiteQuery;
+import androidx.room.SharedSQLiteStatement;
 import androidx.room.util.CursorUtil;
 import androidx.room.util.DBUtil;
 import androidx.sqlite.db.SupportSQLiteStatement;
@@ -33,13 +34,15 @@ public final class NetDao_Impl implements NetDao {
 
   private final EntityInsertionAdapter<NetEntity> __insertionAdapterOfNetEntity;
 
+  private final SharedSQLiteStatement __preparedStmtOfUpdateWireColors;
+
   public NetDao_Impl(@NonNull final RoomDatabase __db) {
     this.__db = __db;
     this.__insertionAdapterOfNetEntity = new EntityInsertionAdapter<NetEntity>(__db) {
       @Override
       @NonNull
       protected String createQuery() {
-        return "INSERT OR REPLACE INTO `nets` (`id`,`projectId`,`name`,`netType`,`color`) VALUES (?,?,?,?,?)";
+        return "INSERT OR REPLACE INTO `nets` (`id`,`projectId`,`name`,`netType`,`color`,`stripeColor`) VALUES (?,?,?,?,?,?)";
       }
 
       @Override
@@ -54,6 +57,19 @@ public final class NetDao_Impl implements NetDao {
         } else {
           statement.bindString(5, entity.getColor());
         }
+        if (entity.getStripeColor() == null) {
+          statement.bindNull(6);
+        } else {
+          statement.bindString(6, entity.getStripeColor());
+        }
+      }
+    };
+    this.__preparedStmtOfUpdateWireColors = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "UPDATE nets SET color = ?, stripeColor = ? WHERE id = ?";
+        return _query;
       }
     };
   }
@@ -77,6 +93,44 @@ public final class NetDao_Impl implements NetDao {
   }
 
   @Override
+  public Object updateWireColors(final String netId, final String color, final String stripeColor,
+      final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfUpdateWireColors.acquire();
+        int _argIndex = 1;
+        if (color == null) {
+          _stmt.bindNull(_argIndex);
+        } else {
+          _stmt.bindString(_argIndex, color);
+        }
+        _argIndex = 2;
+        if (stripeColor == null) {
+          _stmt.bindNull(_argIndex);
+        } else {
+          _stmt.bindString(_argIndex, stripeColor);
+        }
+        _argIndex = 3;
+        _stmt.bindString(_argIndex, netId);
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfUpdateWireColors.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
   public Flow<List<NetEntity>> observeForProject(final String projectId) {
     final String _sql = "SELECT * FROM nets WHERE projectId = ?";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
@@ -93,6 +147,7 @@ public final class NetDao_Impl implements NetDao {
           final int _cursorIndexOfName = CursorUtil.getColumnIndexOrThrow(_cursor, "name");
           final int _cursorIndexOfNetType = CursorUtil.getColumnIndexOrThrow(_cursor, "netType");
           final int _cursorIndexOfColor = CursorUtil.getColumnIndexOrThrow(_cursor, "color");
+          final int _cursorIndexOfStripeColor = CursorUtil.getColumnIndexOrThrow(_cursor, "stripeColor");
           final List<NetEntity> _result = new ArrayList<NetEntity>(_cursor.getCount());
           while (_cursor.moveToNext()) {
             final NetEntity _item;
@@ -110,7 +165,13 @@ public final class NetDao_Impl implements NetDao {
             } else {
               _tmpColor = _cursor.getString(_cursorIndexOfColor);
             }
-            _item = new NetEntity(_tmpId,_tmpProjectId,_tmpName,_tmpNetType,_tmpColor);
+            final String _tmpStripeColor;
+            if (_cursor.isNull(_cursorIndexOfStripeColor)) {
+              _tmpStripeColor = null;
+            } else {
+              _tmpStripeColor = _cursor.getString(_cursorIndexOfStripeColor);
+            }
+            _item = new NetEntity(_tmpId,_tmpProjectId,_tmpName,_tmpNetType,_tmpColor,_tmpStripeColor);
             _result.add(_item);
           }
           return _result;
@@ -147,6 +208,7 @@ public final class NetDao_Impl implements NetDao {
           final int _cursorIndexOfName = CursorUtil.getColumnIndexOrThrow(_cursor, "name");
           final int _cursorIndexOfNetType = CursorUtil.getColumnIndexOrThrow(_cursor, "netType");
           final int _cursorIndexOfColor = CursorUtil.getColumnIndexOrThrow(_cursor, "color");
+          final int _cursorIndexOfStripeColor = CursorUtil.getColumnIndexOrThrow(_cursor, "stripeColor");
           final NetEntity _result;
           if (_cursor.moveToFirst()) {
             final String _tmpId;
@@ -163,7 +225,13 @@ public final class NetDao_Impl implements NetDao {
             } else {
               _tmpColor = _cursor.getString(_cursorIndexOfColor);
             }
-            _result = new NetEntity(_tmpId,_tmpProjectId,_tmpName,_tmpNetType,_tmpColor);
+            final String _tmpStripeColor;
+            if (_cursor.isNull(_cursorIndexOfStripeColor)) {
+              _tmpStripeColor = null;
+            } else {
+              _tmpStripeColor = _cursor.getString(_cursorIndexOfStripeColor);
+            }
+            _result = new NetEntity(_tmpId,_tmpProjectId,_tmpName,_tmpNetType,_tmpColor,_tmpStripeColor);
           } else {
             _result = null;
           }

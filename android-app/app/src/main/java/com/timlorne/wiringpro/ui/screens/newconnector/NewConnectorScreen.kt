@@ -146,7 +146,7 @@ fun NewConnectorScreen(
                                 selectedPart = part
                                 label = part.connectorLabel
                                 rowCounts.clear()
-                                part.rows.forEach { rowCounts.add(row.toString()) }
+                                part.rows.forEach { row -> rowCounts.add(row.toString()) }
                                 showPartPicker = false
                             },
                             modifier = Modifier.fillMaxWidth()
@@ -159,7 +159,7 @@ fun NewConnectorScreen(
                                 selectedPart = part
                                 label = part.connectorLabel
                                 rowCounts.clear()
-                                part.rows.forEach { rowCounts.add(row.toString()) }
+                                part.rows.forEach { row -> rowCounts.add(row.toString()) }
                                 showPartPicker = false
                             },
                             modifier = Modifier.fillMaxWidth()

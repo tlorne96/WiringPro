@@ -38,7 +38,7 @@ public final class AppDatabase_Impl extends AppDatabase {
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(2) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(3) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `projects` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `vehicle` TEXT, `notes` TEXT, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `imagePath` TEXT, PRIMARY KEY(`id`))");
@@ -47,10 +47,10 @@ public final class AppDatabase_Impl extends AppDatabase {
         db.execSQL("CREATE TABLE IF NOT EXISTS `pins` (`id` TEXT NOT NULL, `connectorId` TEXT NOT NULL, `index` INTEGER NOT NULL, `row` INTEGER NOT NULL, `col` INTEGER NOT NULL, `netId` TEXT, `label` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`connectorId`) REFERENCES `connectors`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`netId`) REFERENCES `nets`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )");
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_pins_connectorId` ON `pins` (`connectorId`)");
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_pins_netId` ON `pins` (`netId`)");
-        db.execSQL("CREATE TABLE IF NOT EXISTS `nets` (`id` TEXT NOT NULL, `projectId` TEXT NOT NULL, `name` TEXT NOT NULL, `netType` TEXT NOT NULL, `color` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`projectId`) REFERENCES `projects`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `nets` (`id` TEXT NOT NULL, `projectId` TEXT NOT NULL, `name` TEXT NOT NULL, `netType` TEXT NOT NULL, `color` TEXT, `stripeColor` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`projectId`) REFERENCES `projects`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_nets_projectId` ON `nets` (`projectId`)");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '038d2633fecf01e40258ea21826266c0')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd9354899825e6f459a3cfb1e84e5e3bc')");
       }
 
       @Override
@@ -158,12 +158,13 @@ public final class AppDatabase_Impl extends AppDatabase {
                   + " Expected:\n" + _infoPins + "\n"
                   + " Found:\n" + _existingPins);
         }
-        final HashMap<String, TableInfo.Column> _columnsNets = new HashMap<String, TableInfo.Column>(5);
+        final HashMap<String, TableInfo.Column> _columnsNets = new HashMap<String, TableInfo.Column>(6);
         _columnsNets.put("id", new TableInfo.Column("id", "TEXT", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsNets.put("projectId", new TableInfo.Column("projectId", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsNets.put("name", new TableInfo.Column("name", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsNets.put("netType", new TableInfo.Column("netType", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
         _columnsNets.put("color", new TableInfo.Column("color", "TEXT", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsNets.put("stripeColor", new TableInfo.Column("stripeColor", "TEXT", false, 0, null, TableInfo.CREATED_FROM_ENTITY));
         final HashSet<TableInfo.ForeignKey> _foreignKeysNets = new HashSet<TableInfo.ForeignKey>(1);
         _foreignKeysNets.add(new TableInfo.ForeignKey("projects", "CASCADE", "NO ACTION", Arrays.asList("projectId"), Arrays.asList("id")));
         final HashSet<TableInfo.Index> _indicesNets = new HashSet<TableInfo.Index>(1);
@@ -177,7 +178,7 @@ public final class AppDatabase_Impl extends AppDatabase {
         }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "038d2633fecf01e40258ea21826266c0", "34ea3ad217185e6b51b43d3d35bbce38");
+    }, "d9354899825e6f459a3cfb1e84e5e3bc", "385c6a2f1ccdd67d1469c1e22d4357d4");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;
