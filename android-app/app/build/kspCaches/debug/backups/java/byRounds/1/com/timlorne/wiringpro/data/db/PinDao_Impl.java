@@ -1,16 +1,19 @@
 package com.timlorne.wiringpro.data.db;
 
 import android.database.Cursor;
+import android.os.CancellationSignal;
 import androidx.annotation.NonNull;
 import androidx.room.CoroutinesRoom;
 import androidx.room.EntityInsertionAdapter;
 import androidx.room.RoomDatabase;
 import androidx.room.RoomSQLiteQuery;
 import androidx.room.SharedSQLiteStatement;
+import androidx.room.util.CursorUtil;
 import androidx.room.util.DBUtil;
 import androidx.sqlite.db.SupportSQLiteStatement;
 import java.lang.Class;
 import java.lang.Exception;
+import java.lang.Integer;
 import java.lang.Object;
 import java.lang.Override;
 import java.lang.String;
@@ -32,6 +35,8 @@ public final class PinDao_Impl implements PinDao {
   private final EntityInsertionAdapter<PinEntity> __insertionAdapterOfPinEntity;
 
   private final SharedSQLiteStatement __preparedStmtOfAssignNet;
+
+  private final SharedSQLiteStatement __preparedStmtOfAssignNetIfUnassigned;
 
   private final SharedSQLiteStatement __preparedStmtOfSetLabel;
 
@@ -69,6 +74,14 @@ public final class PinDao_Impl implements PinDao {
       @NonNull
       public String createQuery() {
         final String _query = "UPDATE pins SET netId = ? WHERE id = ?";
+        return _query;
+      }
+    };
+    this.__preparedStmtOfAssignNetIfUnassigned = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "UPDATE pins SET netId = ? WHERE id = ? AND netId IS NULL";
         return _query;
       }
     };
@@ -134,6 +147,34 @@ public final class PinDao_Impl implements PinDao {
   }
 
   @Override
+  public Object assignNetIfUnassigned(final String pinId, final String netId,
+      final Continuation<? super Integer> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Integer>() {
+      @Override
+      @NonNull
+      public Integer call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfAssignNetIfUnassigned.acquire();
+        int _argIndex = 1;
+        _stmt.bindString(_argIndex, netId);
+        _argIndex = 2;
+        _stmt.bindString(_argIndex, pinId);
+        try {
+          __db.beginTransaction();
+          try {
+            final Integer _result = _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return _result;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfAssignNetIfUnassigned.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
   public Object setLabel(final String pinId, final String label,
       final Continuation<? super Unit> $completion) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
@@ -160,6 +201,68 @@ public final class PinDao_Impl implements PinDao {
           }
         } finally {
           __preparedStmtOfSetLabel.release(_stmt);
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object getForProject(final String projectId,
+      final Continuation<? super List<PinEntity>> $completion) {
+    final String _sql = "\n"
+            + "        SELECT pins.* FROM pins\n"
+            + "        INNER JOIN connectors ON pins.connectorId = connectors.id\n"
+            + "        WHERE connectors.projectId = ?\n"
+            + "        ";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 1);
+    int _argIndex = 1;
+    _statement.bindString(_argIndex, projectId);
+    final CancellationSignal _cancellationSignal = DBUtil.createCancellationSignal();
+    return CoroutinesRoom.execute(__db, false, _cancellationSignal, new Callable<List<PinEntity>>() {
+      @Override
+      @NonNull
+      public List<PinEntity> call() throws Exception {
+        final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+        try {
+          final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+          final int _cursorIndexOfConnectorId = CursorUtil.getColumnIndexOrThrow(_cursor, "connectorId");
+          final int _cursorIndexOfIndex = CursorUtil.getColumnIndexOrThrow(_cursor, "index");
+          final int _cursorIndexOfRow = CursorUtil.getColumnIndexOrThrow(_cursor, "row");
+          final int _cursorIndexOfCol = CursorUtil.getColumnIndexOrThrow(_cursor, "col");
+          final int _cursorIndexOfNetId = CursorUtil.getColumnIndexOrThrow(_cursor, "netId");
+          final int _cursorIndexOfLabel = CursorUtil.getColumnIndexOrThrow(_cursor, "label");
+          final List<PinEntity> _result = new ArrayList<PinEntity>(_cursor.getCount());
+          while (_cursor.moveToNext()) {
+            final PinEntity _item;
+            final String _tmpId;
+            _tmpId = _cursor.getString(_cursorIndexOfId);
+            final String _tmpConnectorId;
+            _tmpConnectorId = _cursor.getString(_cursorIndexOfConnectorId);
+            final int _tmpIndex;
+            _tmpIndex = _cursor.getInt(_cursorIndexOfIndex);
+            final int _tmpRow;
+            _tmpRow = _cursor.getInt(_cursorIndexOfRow);
+            final int _tmpCol;
+            _tmpCol = _cursor.getInt(_cursorIndexOfCol);
+            final String _tmpNetId;
+            if (_cursor.isNull(_cursorIndexOfNetId)) {
+              _tmpNetId = null;
+            } else {
+              _tmpNetId = _cursor.getString(_cursorIndexOfNetId);
+            }
+            final String _tmpLabel;
+            if (_cursor.isNull(_cursorIndexOfLabel)) {
+              _tmpLabel = null;
+            } else {
+              _tmpLabel = _cursor.getString(_cursorIndexOfLabel);
+            }
+            _item = new PinEntity(_tmpId,_tmpConnectorId,_tmpIndex,_tmpRow,_tmpCol,_tmpNetId,_tmpLabel);
+            _result.add(_item);
+          }
+          return _result;
+        } finally {
+          _cursor.close();
+          _statement.release();
         }
       }
     }, $completion);

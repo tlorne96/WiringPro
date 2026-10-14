@@ -79,6 +79,9 @@ interface ConnectorDao {
     @Delete
     suspend fun delete(connector: ConnectorEntity)
 
+    @Query("DELETE FROM connectors WHERE id = :connectorId")
+    suspend fun deleteById(connectorId: String)
+
     @Query("SELECT * FROM connectors WHERE projectId = :projectId")
     fun observeForProject(projectId: String): Flow<List<ConnectorEntity>>
 
@@ -98,6 +101,18 @@ interface PinDao {
 
     @Query("UPDATE pins SET netId = :netId WHERE id = :pinId")
     suspend fun assignNet(pinId: String, netId: String?)
+
+    @Query("UPDATE pins SET netId = :netId WHERE id = :pinId AND netId IS NULL")
+    suspend fun assignNetIfUnassigned(pinId: String, netId: String): Int
+
+    @Query(
+        """
+        SELECT pins.* FROM pins
+        INNER JOIN connectors ON pins.connectorId = connectors.id
+        WHERE connectors.projectId = :projectId
+        """
+    )
+    suspend fun getForProject(projectId: String): List<PinEntity>
 
     @Query("UPDATE pins SET label = :label WHERE id = :pinId")
     suspend fun setLabel(pinId: String, label: String?)

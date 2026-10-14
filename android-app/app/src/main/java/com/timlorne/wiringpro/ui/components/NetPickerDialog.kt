@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -31,6 +32,34 @@ import com.timlorne.wiringpro.data.db.NetEntity
 import com.timlorne.wiringpro.data.model.StandardNetTypes
 import com.timlorne.wiringpro.data.repository.NetWithAssignments
 
+private fun suggestedNetTypeForPin(pinLabel: String?): String? {
+    val label = pinLabel
+        ?.substringBefore('|')
+        ?.filterNot { it.isWhitespace() || it == '+' || it == '/' }
+        ?.uppercase()
+        ?: return null
+    return when (label) {
+        "PWMIN" -> "PWM_INPUT"
+        "MOTORTEMP", "MOTORTEMPERATURE" -> "MOTOR_TEMP_SENSOR"
+        "5V" -> "5V_SUPPLY"
+        "12V", "12VOUTPUT", "OUTPUT12V" -> "12V_SUPPLY"
+        "36V", "BATTERYPOS", "BATTERYPOSITIVE", "B" -> "36V_SUPPLY"
+        "GND", "GROUND", "0V", "BATTERYNEG", "BATTERYNEGATIVE", "B-" -> "GND"
+        "CAN2BUSHIGH" -> "CAN2_H"
+        "CAN2BUSLOW" -> "CAN2_L"
+        "CANHIGH", "CANBUSHIGH" -> "CAN_H"
+        "CANLOW", "CANBUSLOW" -> "CAN_L"
+        "IGNITION", "IGNITIONSIGNAL", "KEYLOCKIGNITION" -> "IGNITION_ON"
+        "SENSOR1", "THROTTLE1" -> "THROTTLE_SIGNAL_A"
+        "SENSOR2", "THROTTLE2" -> "THROTTLE_SIGNAL_B"
+        "ANALOGINPUTREGEN", "ANALOGUEINPUTREGEN" -> "REGEN_BRAKE_SIGNAL"
+        "HALLA" -> "MOTOR_HALL_A"
+        "HALLB" -> "MOTOR_HALL_B"
+        "HALLC", "HALLZ" -> "MOTOR_HALL_C"
+        else -> null
+    }
+}
+
 /**
  * Pin was tapped -> pick what it's wired to. Three sources of options:
  * existing nets already used in this project — shown with WHERE they're
@@ -43,6 +72,8 @@ fun NetPickerDialog(
     existingNets: List<NetWithAssignments>,
     selectedNet: NetEntity?,
     pinLabel: String?,
+    smartConnectMatchingLabels: Boolean,
+    onSmartConnectMatchingLabelsChange: (Boolean) -> Unit,
     onDismiss: () -> Unit,
     onSelectExisting: (NetWithAssignments) -> Unit,
     onUpdateNetColors: (netId: String, color: String, stripeColor: String?) -> Unit,
@@ -51,6 +82,8 @@ fun NetPickerDialog(
 ) {
     var customName by remember { mutableStateOf("") }
     var editingColor by remember { mutableStateOf(false) }
+    val standardTypes = StandardNetTypes.ALL.filter { it.type != "CUSTOM" }
+    val suggestedStandardType = standardTypes.firstOrNull { it.type == suggestedNetTypeForPin(pinLabel) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -64,6 +97,15 @@ fun NetPickerDialog(
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
+                    }
+                }
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = smartConnectMatchingLabels,
+                            onCheckedChange = onSmartConnectMatchingLabelsChange
+                        )
+                        Text("Smart-connect matching pin labels")
                     }
                 }
                 if (existingNets.isNotEmpty()) {
@@ -99,14 +141,29 @@ fun NetPickerDialog(
                     }
                 }
 
-                item { Text("Standard signal types", style = MaterialTheme.typography.labelMedium) }
-                items(StandardNetTypes.ALL.filter { it.type != "CUSTOM" }) { standard ->
+                item {
+                    Text(
+                        if (suggestedStandardType == null) "Standard signal types" else "Suggested for this pin",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+                suggestedStandardType?.let { standard ->
+                    item {
+                        TextButton(
+                            onClick = { onCreateNew(standard.label, standard.type, standard.defaultColor) }
+                        ) { Text(standard.label) }
+                    }
+                    item { Text("Other signal types", style = MaterialTheme.typography.labelMedium) }
+                }
+                items(standardTypes.filterNot { it.type == suggestedStandardType?.type }) { standard ->
                     Text(
                         text = standard.label,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
-                            .clickableCompat { onCreateNew(standard.label, standard.type, standard.defaultColor) }
+                            .clickableCompat {
+                                onCreateNew(standard.label, standard.type, standard.defaultColor)
+                            }
                     )
                 }
 
@@ -126,7 +183,9 @@ fun NetPickerDialog(
         },
         confirmButton = {
             TextButton(onClick = {
-                if (customName.isNotBlank()) onCreateNew(customName.trim(), "CUSTOM", null)
+                if (customName.isNotBlank()) {
+                    onCreateNew(customName.trim(), "CUSTOM", null)
+                }
             }) { Text("Add custom net") }
         },
         dismissButton = {

@@ -8,11 +8,13 @@ import com.timlorne.wiringpro.data.db.ConnectorWithPins
 import com.timlorne.wiringpro.data.db.NetEntity
 import com.timlorne.wiringpro.data.db.PinEntity
 import com.timlorne.wiringpro.data.db.ProjectEntity
+import com.timlorne.wiringpro.data.model.StandardNetTypes
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
+import kotlin.math.abs
 import java.io.File
 import java.util.UUID
 
@@ -20,6 +22,98 @@ import java.util.UUID
 // ["Main pin 1", "Throttle pin 5"] — this is what lets the net picker show
 // what a net already touches instead of just its bare name.
 data class NetWithAssignments(val net: NetEntity, val assignmentLabels: List<String>)
+
+private data class TemplateSignal(
+    val key: String,
+    val type: String,
+    val name: String,
+    val color: String?,
+    val common: Boolean,
+    val preferredControllerPin: Pair<Int, Int>?
+)
+
+private data class TemplateSignalPin(val signal: TemplateSignal, val pin: PinEntity)
+
+private fun matchingLabelKey(label: String?): String? {
+    val normalized = label
+        ?.substringBefore('|')
+        ?.filterNot { it.isWhitespace() || it == '+' }
+        ?.uppercase()
+        ?.takeIf { it.isNotEmpty() }
+        ?: return null
+    return when (normalized) {
+        "GND", "GROUND", "0V" -> "GND"
+        else -> normalized
+    }
+}
+
+private fun templateSignalForPin(label: String?): TemplateSignal? {
+    val sections = label?.split('|') ?: return null
+    fun normalize(value: String?): String = value.orEmpty()
+        .filterNot { it.isWhitespace() || it == '+' || it == '/' }
+        .uppercase()
+
+    val pinName = normalize(sections.firstOrNull())
+    val rawFunction = sections.getOrNull(1)
+    val function = normalize(rawFunction)
+    val preferredControllerPin = Regex("CONNECTOR(\\d+)PIN(\\d+)")
+        .find(function)
+        ?.let { match ->
+            val connectorNumber = match.groupValues[1].toIntOrNull()
+            val pinNumber = match.groupValues[2].toIntOrNull()
+            if (connectorNumber != null && pinNumber != null) connectorNumber to pinNumber else null
+        }
+    val signal = when {
+        pinName == "PWMIN" || pinName == "PWMOUT" -> Triple("PWM_INPUT", "PWM IN", false)
+        pinName == "MTEMP" || pinName.contains("MOTORTEMP") || function.contains("MOTORTEMPERATURE") ->
+            Triple("MOTOR_TEMP_SENSOR", "Motor Temp", false)
+        pinName == "5V" -> Triple("5V_SUPPLY", "5V", true)
+        pinName in setOf("12V", "12VOUTPUT", "OUTPUT12V") -> Triple("12V_SUPPLY", "12V", true)
+        pinName == "GND" || pinName == "GROUND" || pinName.startsWith("0V") ->
+            Triple("GND", "Ground", true)
+        pinName in setOf("0VOUTPUT", "OUTPUT0V") -> Triple("GND", "Ground", true)
+        pinName == "36V" -> Triple("36V_SUPPLY", "36V", false)
+        pinName in setOf("BATTERYPOS", "BATTERYPOSITIVE", "B") ->
+            Triple("36V_SUPPLY", "36V", false)
+        pinName in setOf("BATTERYNEG", "BATTERYNEGATIVE", "B-") ->
+            Triple("GND", "Ground", true)
+        (pinName.startsWith("CAN2") && pinName.contains("LOW")) || function.contains("CAN2BUSLOW") ->
+            Triple("CAN2_L", "CAN 2 BUS Low", false)
+        (pinName.startsWith("CAN2") && pinName.contains("HIGH")) || function.contains("CAN2BUSHIGH") ->
+            Triple("CAN2_H", "CAN 2 BUS High", false)
+        pinName.startsWith("CAN") && pinName.contains("LOW") || function.contains("CANBUSLOW") ->
+            Triple("CAN_L", "CAN Low", false)
+        pinName.startsWith("CAN") && pinName.contains("HIGH") || function.contains("CANBUSHIGH") ->
+            Triple("CAN_H", "CAN High", false)
+        pinName.contains("IGNITION") || function == "IGNITION" ->
+            Triple("IGNITION_ON", "Ignition", false)
+        pinName == "NRST" -> Triple("CUSTOM", "NRST", false)
+        pinName == "SWDIO" -> Triple("CUSTOM", "SWDIO", false)
+        pinName == "SWCLK" || pinName == "SWDCLK" -> Triple("CUSTOM", "SWCLK", false)
+        pinName == "TX1" -> Triple("CUSTOM", "TX1", false)
+        pinName == "RX1" -> Triple("CUSTOM", "RX1", false)
+        pinName.startsWith("DIN") && pinName.length > 3 && pinName.drop(3).all(Char::isDigit) ->
+            Triple("CUSTOM", "DIN ${pinName.drop(3)}", false)
+        pinName == "SENSOR1" || pinName.startsWith("THROTTLE1") || function.contains("THROTTLE1") ->
+            Triple("THROTTLE_SIGNAL_A", "Sensor 1", false)
+        pinName == "SENSOR2" || pinName.startsWith("THROTTLE2") || function.contains("THROTTLE2") ->
+            Triple("THROTTLE_SIGNAL_B", "Sensor 2", false)
+        pinName in setOf("ANALOGINPUTREGEN", "ANALOGUEINPUTREGEN") ->
+            Triple("REGEN_BRAKE_SIGNAL", "Analog Input Regen", false)
+        pinName.startsWith("HALLA") || function.contains("ENCODERA") ->
+            Triple("MOTOR_HALL_A", "Hall A", false)
+        pinName.startsWith("HALLB") || function.contains("ENCODERB") ->
+            Triple("MOTOR_HALL_B", "Hall B", false)
+        pinName.startsWith("HALLC") || pinName.startsWith("HALLZ") ||
+            function.contains("ENCODERC") || function.contains("ENCODERZ") ->
+            Triple("MOTOR_HALL_C", "Hall C", false)
+        else -> return null
+    }
+    val (type, name, common) = signal
+    val standardType = StandardNetTypes.ALL.firstOrNull { it.type == type }
+    val matchingKey = if (type == "CUSTOM") name else type
+    return TemplateSignal(matchingKey, type, name, standardType?.defaultColor, common, preferredControllerPin)
+}
 
 class WiringRepository(private val db: AppDatabase) {
 
@@ -106,7 +200,53 @@ class WiringRepository(private val db: AppDatabase) {
             }
         }
         db.pinDao().upsertAll(pins)
+        if (partRef != null) autoConnectTemplatePins(projectId, connectorId)
         return connectorId
+    }
+
+    private suspend fun autoConnectTemplatePins(projectId: String, newConnectorId: String) {
+        val connectorsById = db.connectorDao().observeForProject(projectId).first().associateBy { it.id }
+        val matchingPins = db.pinDao().getForProject(projectId)
+            .mapNotNull { pin -> templateSignalForPin(pin.label)?.let { TemplateSignalPin(it, pin) } }
+            .groupBy({ it.signal.key }, { it })
+
+        for (entries in matchingPins.values) {
+            val newPins = entries.filter { it.pin.connectorId == newConnectorId }
+            val peerPins = entries.filter { it.pin.connectorId != newConnectorId }
+            if (newPins.isEmpty() || peerPins.isEmpty()) continue
+
+            val signal = entries.first().signal
+            if (signal.common) {
+                val existingNetIds = entries.mapNotNull { it.pin.netId }.distinct()
+                val closestAssignedPeer = newPins.firstOrNull()?.let { newPin ->
+                    peerPins.filter { it.pin.netId != null }
+                        .minByOrNull { abs(it.pin.index - newPin.pin.index) }
+                }
+                val netId = existingNetIds.singleOrNull()
+                    ?: closestAssignedPeer?.pin?.netId
+                    ?: getOrCreateNet(projectId, signal.name, signal.type, signal.color)
+                entries.forEach { db.pinDao().assignNet(it.pin.id, netId) }
+            } else {
+                for (newPin in newPins.filter { it.pin.netId == null }) {
+                    val preferredPeer = newPin.signal.preferredControllerPin?.let { (connectorNumber, pinIndex) ->
+                        peerPins.firstOrNull {
+                            it.pin.index == pinIndex &&
+                                connectorsById[it.pin.connectorId]?.label?.contains(
+                                    "Connector $connectorNumber",
+                                    ignoreCase = true
+                                ) == true
+                        }
+                    }
+                    val nearestPeer = preferredPeer ?: peerPins.minByOrNull {
+                        abs(it.pin.index - newPin.pin.index)
+                    } ?: continue
+                    val netId = nearestPeer.pin.netId
+                        ?: getOrCreateNet(projectId, signal.name, signal.type, signal.color)
+                    db.pinDao().assignNetIfUnassigned(nearestPeer.pin.id, netId)
+                    db.pinDao().assignNetIfUnassigned(newPin.pin.id, netId)
+                }
+            }
+        }
     }
 
     fun observeConnectorsWithPins(projectId: String): Flow<List<ConnectorWithPins>> =
@@ -114,6 +254,10 @@ class WiringRepository(private val db: AppDatabase) {
 
     fun observeConnectorWithPins(connectorId: String): Flow<ConnectorWithPins?> =
         db.connectorDao().observeWithPins(connectorId)
+
+    suspend fun deleteConnector(connectorId: String) {
+        db.connectorDao().deleteById(connectorId)
+    }
 
     /**
      * Duplicates a connector's shape (label + rows) as a new connector with
@@ -185,6 +329,20 @@ class WiringRepository(private val db: AppDatabase) {
 
     suspend fun assignPinToNet(pinId: String, netId: String?) {
         db.pinDao().assignNet(pinId, netId)
+    }
+
+    suspend fun assignPinToMatchingAssignedLabel(pinId: String, projectId: String): Boolean {
+        val projectPins = db.pinDao().getForProject(projectId)
+        val targetPin = projectPins.firstOrNull { it.id == pinId } ?: return false
+        if (targetPin.netId != null) return false
+        val targetKey = matchingLabelKey(targetPin.label) ?: return false
+        val matchingNetIds = projectPins.asSequence()
+            .filter { it.id != pinId && it.netId != null && matchingLabelKey(it.label) == targetKey }
+            .mapNotNull { it.netId }
+            .distinct()
+            .toList()
+        val matchingNetId = matchingNetIds.singleOrNull() ?: return false
+        return db.pinDao().assignNetIfUnassigned(pinId, matchingNetId) > 0
     }
 
     suspend fun updateNetColors(netId: String, color: String?, stripeColor: String?) {

@@ -3,7 +3,9 @@
   "standardTypes": [
     { "type": "GND",              "label": "Ground / Common Ground",     "defaultColor": "#000000" },
     { "type": "12V_SUPPLY",       "label": "12V Battery Supply",         "defaultColor": "#8B0000" },
+    { "type": "36V_SUPPLY",       "label": "36V Battery Supply",         "defaultColor": "#7B1FA2" },
     { "type": "5V_SUPPLY",        "label": "5V Sensor Supply",           "defaultColor": "#FF0000" },
+    { "type": "PWM_INPUT",        "label": "PWM IN",                      "defaultColor": "#FF8C00" },
     { "type": "IGNITION_ON",      "label": "Ignition / Key On",          "defaultColor": "#FFA500" },
     { "type": "THROTTLE_SIGNAL_A","label": "Throttle Signal A",          "defaultColor": "#00AEEF" },
     { "type": "THROTTLE_SIGNAL_B","label": "Throttle Signal B",          "defaultColor": "#7CFC00" },
@@ -15,6 +17,8 @@
     { "type": "TAILLIGHT_BRAKE",  "label": "Taillight / Brake Light",    "defaultColor": "#DC143C" },
     { "type": "CAN_H",            "label": "CAN Bus High",                "defaultColor": "#4B0082" },
     { "type": "CAN_L",            "label": "CAN Bus Low",                 "defaultColor": "#9370DB" },
+    { "type": "CAN2_H",           "label": "CAN 2 BUS High",              "defaultColor": "#6A1B9A" },
+    { "type": "CAN2_L",           "label": "CAN 2 BUS Low",               "defaultColor": "#8E24AA" },
     { "type": "SPEED_SENSOR",     "label": "Speed Sensor Signal",        "defaultColor": "#40E0D0" },
     { "type": "DISPLAY_DATA",     "label": "Display Data Line",          "defaultColor": "#DAA520" },
     { "type": "MOTOR_PHASE_U",    "label": "Motor Phase U",              "defaultColor": "#1E90FF" },

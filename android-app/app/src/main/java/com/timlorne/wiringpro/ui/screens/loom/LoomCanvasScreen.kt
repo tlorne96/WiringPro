@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CenterFocusStrong
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -94,7 +95,7 @@ class LoomCanvasViewModel(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoomCanvasScreen(viewModel: LoomCanvasViewModel) {
+fun LoomCanvasScreen(viewModel: LoomCanvasViewModel, onBack: () -> Unit) {
     val connectorsWithPins by viewModel.connectors.collectAsState()
     val nets by viewModel.nets.collectAsState()
 
@@ -107,6 +108,11 @@ fun LoomCanvasScreen(viewModel: LoomCanvasViewModel) {
         topBar = {
             TopAppBar(
                 title = { Text("Loom") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back to connectors")
+                    }
+                },
                 actions = {
                     IconButton(onClick = {
                         scale = 1f

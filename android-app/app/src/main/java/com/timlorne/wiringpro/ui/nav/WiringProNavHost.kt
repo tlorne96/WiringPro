@@ -58,6 +58,7 @@ fun WiringProNavHost(repository: WiringRepository) {
             )
             ConnectorListScreen(
                 viewModel = vm,
+                onBack = { navController.popBackStack() },
                 onAddConnector = { navController.navigate("new_connector/$projectId") },
                 onOpenConnector = { connectorId -> navController.navigate("editor/$projectId/$connectorId") },
                 onViewLoom = { navController.navigate("loom/$projectId") }
@@ -95,7 +96,7 @@ fun WiringProNavHost(repository: WiringRepository) {
             val vm: PinGridEditorViewModel = viewModel(
                 factory = SimpleFactory { PinGridEditorViewModel(repository, projectId, connectorId) }
             )
-            PinGridEditorScreen(viewModel = vm)
+            PinGridEditorScreen(viewModel = vm, onBack = { navController.popBackStack() })
         }
 
         composable(
@@ -106,7 +107,7 @@ fun WiringProNavHost(repository: WiringRepository) {
             val vm: LoomCanvasViewModel = viewModel(
                 factory = SimpleFactory { LoomCanvasViewModel(repository, projectId) }
             )
-            LoomCanvasScreen(viewModel = vm)
+            LoomCanvasScreen(viewModel = vm, onBack = { navController.popBackStack() })
         }
     }
 }

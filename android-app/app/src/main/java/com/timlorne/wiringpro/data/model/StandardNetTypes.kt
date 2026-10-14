@@ -8,7 +8,9 @@ object StandardNetTypes {
     val ALL = listOf(
         StandardNetType("GND", "Ground / common ground", "#000000"),
         StandardNetType("12V_SUPPLY", "12V battery supply", "#8B0000"),
+        StandardNetType("36V_SUPPLY", "36V battery supply", "#7B1FA2"),
         StandardNetType("5V_SUPPLY", "5V sensor supply", "#FF0000"),
+        StandardNetType("PWM_INPUT", "PWM IN", "#FF8C00"),
         StandardNetType("IGNITION_ON", "Ignition / key on", "#FFA500"),
         StandardNetType("THROTTLE_SIGNAL_A", "Throttle signal A", "#00AEEF"),
         StandardNetType("THROTTLE_SIGNAL_B", "Throttle signal B", "#7CFC00"),
@@ -20,6 +22,8 @@ object StandardNetTypes {
         StandardNetType("TAILLIGHT_BRAKE", "Taillight / brake light", "#DC143C"),
         StandardNetType("CAN_H", "CAN bus high", "#4B0082"),
         StandardNetType("CAN_L", "CAN bus low", "#9370DB"),
+        StandardNetType("CAN2_H", "CAN 2 BUS High", "#6A1B9A"),
+        StandardNetType("CAN2_L", "CAN 2 BUS Low", "#8E24AA"),
         StandardNetType("SPEED_SENSOR", "Speed sensor signal", "#40E0D0"),
         StandardNetType("DISPLAY_DATA", "Display data line", "#DAA520"),
         // Electric-drivetrain specific — added for e-bike/PEV builds (BLDC

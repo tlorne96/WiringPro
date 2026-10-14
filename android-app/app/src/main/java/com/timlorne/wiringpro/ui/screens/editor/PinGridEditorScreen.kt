@@ -1,7 +1,12 @@
 package com.timlorne.wiringpro.ui.screens.editor
 
+import android.content.Context
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -10,8 +15,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -40,10 +47,21 @@ class PinGridEditorViewModel(
         viewModelScope.launch { repository.assignPinToNet(pinId, net.net.id) }
     }
 
-    fun assignNew(pinId: String, name: String, netType: String, color: String?) {
+    fun assignNew(
+        pinId: String,
+        name: String,
+        netType: String,
+        color: String?
+    ) {
         viewModelScope.launch {
             val netId = repository.getOrCreateNet(projectId, name, netType, color)
             repository.assignPinToNet(pinId, netId)
+        }
+    }
+
+    fun tryAssignMatchingLabel(pinId: String, onResult: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            onResult(repository.assignPinToMatchingAssignedLabel(pinId, projectId))
         }
     }
 
@@ -58,12 +76,30 @@ class PinGridEditorViewModel(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PinGridEditorScreen(viewModel: PinGridEditorViewModel) {
+fun PinGridEditorScreen(viewModel: PinGridEditorViewModel, onBack: () -> Unit) {
     val connectorWithPins by viewModel.connectorWithPins.collectAsState()
     val netsWithAssignments by viewModel.netsWithAssignments.collectAsState()
+    val context = LocalContext.current
+    val smartConnectPreferences = remember(context) {
+        context.getSharedPreferences("wiringpro_preferences", Context.MODE_PRIVATE)
+    }
+    var smartConnectMatchingLabels by rememberSaveable {
+        mutableStateOf(smartConnectPreferences.getBoolean("smart_connect_matching_labels", false))
+    }
     var tappedPin by remember { mutableStateOf<PinEntity?>(null) }
 
-    Scaffold(topBar = { TopAppBar(title = { Text(connectorWithPins?.connector?.label ?: "Connector") }) }) { padding ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text(connectorWithPins?.connector?.label ?: "Connector") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back to connectors")
+                    }
+                }
+            )
+        }
+    ) { padding ->
         val cwp = connectorWithPins
         if (cwp == null) {
             Text("Loading…", modifier = Modifier.padding(padding).padding(16.dp))
@@ -72,7 +108,15 @@ fun PinGridEditorScreen(viewModel: PinGridEditorViewModel) {
                 connector = cwp.connector,
                 pins = cwp.pins,
                 nets = netsWithAssignments.map { it.net },
-                onPinClick = { pin -> tappedPin = pin },
+                onPinClick = { pin ->
+                    if (smartConnectMatchingLabels && pin.netId == null) {
+                        viewModel.tryAssignMatchingLabel(pin.id) { assigned ->
+                            if (!assigned) tappedPin = pin
+                        }
+                    } else {
+                        tappedPin = pin
+                    }
+                },
                 modifier = Modifier.padding(padding).padding(16.dp)
             )
         }
@@ -83,6 +127,13 @@ fun PinGridEditorScreen(viewModel: PinGridEditorViewModel) {
             existingNets = netsWithAssignments,
             selectedNet = pin.netId?.let { id -> netsWithAssignments.firstOrNull { it.net.id == id }?.net },
             pinLabel = pin.label,
+            smartConnectMatchingLabels = smartConnectMatchingLabels,
+            onSmartConnectMatchingLabelsChange = { enabled ->
+                smartConnectMatchingLabels = enabled
+                smartConnectPreferences.edit()
+                    .putBoolean("smart_connect_matching_labels", enabled)
+                    .apply()
+            },
             onDismiss = { tappedPin = null },
             onSelectExisting = { net ->
                 viewModel.assignExisting(pin.id, net)

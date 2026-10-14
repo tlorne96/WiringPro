@@ -9,6 +9,7 @@ import androidx.room.EntityDeletionOrUpdateAdapter;
 import androidx.room.EntityInsertionAdapter;
 import androidx.room.RoomDatabase;
 import androidx.room.RoomSQLiteQuery;
+import androidx.room.SharedSQLiteStatement;
 import androidx.room.util.CursorUtil;
 import androidx.room.util.DBUtil;
 import androidx.room.util.RelationUtil;
@@ -42,6 +43,8 @@ public final class ConnectorDao_Impl implements ConnectorDao {
   private final Converters __converters = new Converters();
 
   private final EntityDeletionOrUpdateAdapter<ConnectorEntity> __deletionAdapterOfConnectorEntity;
+
+  private final SharedSQLiteStatement __preparedStmtOfDeleteById;
 
   public ConnectorDao_Impl(@NonNull final RoomDatabase __db) {
     this.__db = __db;
@@ -80,6 +83,14 @@ public final class ConnectorDao_Impl implements ConnectorDao {
         statement.bindString(1, entity.getId());
       }
     };
+    this.__preparedStmtOfDeleteById = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "DELETE FROM connectors WHERE id = ?";
+        return _query;
+      }
+    };
   }
 
   @Override
@@ -115,6 +126,31 @@ public final class ConnectorDao_Impl implements ConnectorDao {
           return Unit.INSTANCE;
         } finally {
           __db.endTransaction();
+        }
+      }
+    }, $completion);
+  }
+
+  @Override
+  public Object deleteById(final String connectorId, final Continuation<? super Unit> $completion) {
+    return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
+      @Override
+      @NonNull
+      public Unit call() throws Exception {
+        final SupportSQLiteStatement _stmt = __preparedStmtOfDeleteById.acquire();
+        int _argIndex = 1;
+        _stmt.bindString(_argIndex, connectorId);
+        try {
+          __db.beginTransaction();
+          try {
+            _stmt.executeUpdateDelete();
+            __db.setTransactionSuccessful();
+            return Unit.INSTANCE;
+          } finally {
+            __db.endTransaction();
+          }
+        } finally {
+          __preparedStmtOfDeleteById.release(_stmt);
         }
       }
     }, $completion);
