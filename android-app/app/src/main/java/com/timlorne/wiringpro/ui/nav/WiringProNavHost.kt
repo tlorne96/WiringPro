@@ -15,6 +15,8 @@ import com.timlorne.wiringpro.ui.screens.connectorlist.ConnectorListScreen
 import com.timlorne.wiringpro.ui.screens.connectorlist.ConnectorListViewModel
 import com.timlorne.wiringpro.ui.screens.editor.PinGridEditorScreen
 import com.timlorne.wiringpro.ui.screens.editor.PinGridEditorViewModel
+import com.timlorne.wiringpro.ui.screens.harness.HarnessMapScreen
+import com.timlorne.wiringpro.ui.screens.harness.HarnessMapViewModel
 import com.timlorne.wiringpro.ui.screens.loom.LoomCanvasScreen
 import com.timlorne.wiringpro.ui.screens.loom.LoomCanvasViewModel
 import com.timlorne.wiringpro.ui.screens.newconnector.NewConnectorScreen
@@ -61,7 +63,8 @@ fun WiringProNavHost(repository: WiringRepository) {
                 onBack = { navController.popBackStack() },
                 onAddConnector = { navController.navigate("new_connector/$projectId") },
                 onOpenConnector = { connectorId -> navController.navigate("editor/$projectId/$connectorId") },
-                onViewLoom = { navController.navigate("loom/$projectId") }
+                onViewLoom = { navController.navigate("loom/$projectId") },
+                onViewHarnessMap = { navController.navigate("harness_map/$projectId") }
             )
         }
 
@@ -108,6 +111,17 @@ fun WiringProNavHost(repository: WiringRepository) {
                 factory = SimpleFactory { LoomCanvasViewModel(repository, projectId) }
             )
             LoomCanvasScreen(viewModel = vm, onBack = { navController.popBackStack() })
+        }
+
+        composable(
+            route = "harness_map/{projectId}",
+            arguments = listOf(navArgument("projectId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val projectId = backStackEntry.arguments?.getString("projectId")!!
+            val vm: HarnessMapViewModel = viewModel(
+                factory = SimpleFactory { HarnessMapViewModel(repository, projectId) }
+            )
+            HarnessMapScreen(viewModel = vm, onBack = { navController.popBackStack() })
         }
     }
 }

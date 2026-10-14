@@ -5,6 +5,8 @@ import android.net.Uri
 import com.timlorne.wiringpro.data.db.AppDatabase
 import com.timlorne.wiringpro.data.db.ConnectorEntity
 import com.timlorne.wiringpro.data.db.ConnectorWithPins
+import com.timlorne.wiringpro.data.db.HarnessCableEntity
+import com.timlorne.wiringpro.data.db.HarnessPlacementEntity
 import com.timlorne.wiringpro.data.db.NetEntity
 import com.timlorne.wiringpro.data.db.PinEntity
 import com.timlorne.wiringpro.data.db.ProjectEntity
@@ -254,6 +256,31 @@ class WiringRepository(private val db: AppDatabase) {
 
     fun observeConnectorWithPins(connectorId: String): Flow<ConnectorWithPins?> =
         db.connectorDao().observeWithPins(connectorId)
+
+    fun observeHarnessPlacements(projectId: String): Flow<List<HarnessPlacementEntity>> =
+        db.harnessDao().observePlacements(projectId)
+
+    fun observeHarnessCables(projectId: String): Flow<List<HarnessCableEntity>> =
+        db.harnessDao().observeCables(projectId)
+
+    suspend fun saveHarnessPlacement(projectId: String, connectorId: String, xDp: Float, yDp: Float) {
+        db.harnessDao().upsertPlacement(HarnessPlacementEntity(connectorId, projectId, xDp, yDp))
+    }
+
+    suspend fun saveHarnessCableLength(projectId: String, connectorAId: String, connectorBId: String, lengthMm: Int) {
+        require(connectorAId != connectorBId) { "A cable must connect two different connectors" }
+        require(lengthMm > 0) { "Cable length must be greater than zero" }
+        val (fromConnectorId, toConnectorId) = listOf(connectorAId, connectorBId).sorted()
+        db.harnessDao().upsertCable(
+            HarnessCableEntity(
+                id = "$fromConnectorId:$toConnectorId",
+                projectId = projectId,
+                fromConnectorId = fromConnectorId,
+                toConnectorId = toConnectorId,
+                lengthMm = lengthMm
+            )
+        )
+    }
 
     suspend fun deleteConnector(connectorId: String) {
         db.connectorDao().deleteById(connectorId)

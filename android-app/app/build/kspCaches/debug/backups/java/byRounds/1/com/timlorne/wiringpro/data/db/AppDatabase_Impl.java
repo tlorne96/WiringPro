@@ -35,10 +35,12 @@ public final class AppDatabase_Impl extends AppDatabase {
 
   private volatile NetDao _netDao;
 
+  private volatile HarnessDao _harnessDao;
+
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(3) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(4) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `projects` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `vehicle` TEXT, `notes` TEXT, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `imagePath` TEXT, PRIMARY KEY(`id`))");
@@ -49,8 +51,14 @@ public final class AppDatabase_Impl extends AppDatabase {
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_pins_netId` ON `pins` (`netId`)");
         db.execSQL("CREATE TABLE IF NOT EXISTS `nets` (`id` TEXT NOT NULL, `projectId` TEXT NOT NULL, `name` TEXT NOT NULL, `netType` TEXT NOT NULL, `color` TEXT, `stripeColor` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`projectId`) REFERENCES `projects`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_nets_projectId` ON `nets` (`projectId`)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `harness_placements` (`connectorId` TEXT NOT NULL, `projectId` TEXT NOT NULL, `xDp` REAL NOT NULL, `yDp` REAL NOT NULL, PRIMARY KEY(`connectorId`), FOREIGN KEY(`projectId`) REFERENCES `projects`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`connectorId`) REFERENCES `connectors`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_harness_placements_projectId` ON `harness_placements` (`projectId`)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS `harness_cables` (`id` TEXT NOT NULL, `projectId` TEXT NOT NULL, `fromConnectorId` TEXT NOT NULL, `toConnectorId` TEXT NOT NULL, `lengthMm` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`projectId`) REFERENCES `projects`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`fromConnectorId`) REFERENCES `connectors`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`toConnectorId`) REFERENCES `connectors`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )");
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_harness_cables_projectId` ON `harness_cables` (`projectId`)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_harness_cables_fromConnectorId` ON `harness_cables` (`fromConnectorId`)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_harness_cables_toConnectorId` ON `harness_cables` (`toConnectorId`)");
         db.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)");
-        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'd9354899825e6f459a3cfb1e84e5e3bc')");
+        db.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9ca96b082649df923e9f47c090f6d911')");
       }
 
       @Override
@@ -59,6 +67,8 @@ public final class AppDatabase_Impl extends AppDatabase {
         db.execSQL("DROP TABLE IF EXISTS `connectors`");
         db.execSQL("DROP TABLE IF EXISTS `pins`");
         db.execSQL("DROP TABLE IF EXISTS `nets`");
+        db.execSQL("DROP TABLE IF EXISTS `harness_placements`");
+        db.execSQL("DROP TABLE IF EXISTS `harness_cables`");
         final List<? extends RoomDatabase.Callback> _callbacks = mCallbacks;
         if (_callbacks != null) {
           for (RoomDatabase.Callback _callback : _callbacks) {
@@ -176,9 +186,47 @@ public final class AppDatabase_Impl extends AppDatabase {
                   + " Expected:\n" + _infoNets + "\n"
                   + " Found:\n" + _existingNets);
         }
+        final HashMap<String, TableInfo.Column> _columnsHarnessPlacements = new HashMap<String, TableInfo.Column>(4);
+        _columnsHarnessPlacements.put("connectorId", new TableInfo.Column("connectorId", "TEXT", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsHarnessPlacements.put("projectId", new TableInfo.Column("projectId", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsHarnessPlacements.put("xDp", new TableInfo.Column("xDp", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsHarnessPlacements.put("yDp", new TableInfo.Column("yDp", "REAL", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysHarnessPlacements = new HashSet<TableInfo.ForeignKey>(2);
+        _foreignKeysHarnessPlacements.add(new TableInfo.ForeignKey("projects", "CASCADE", "NO ACTION", Arrays.asList("projectId"), Arrays.asList("id")));
+        _foreignKeysHarnessPlacements.add(new TableInfo.ForeignKey("connectors", "CASCADE", "NO ACTION", Arrays.asList("connectorId"), Arrays.asList("id")));
+        final HashSet<TableInfo.Index> _indicesHarnessPlacements = new HashSet<TableInfo.Index>(1);
+        _indicesHarnessPlacements.add(new TableInfo.Index("index_harness_placements_projectId", false, Arrays.asList("projectId"), Arrays.asList("ASC")));
+        final TableInfo _infoHarnessPlacements = new TableInfo("harness_placements", _columnsHarnessPlacements, _foreignKeysHarnessPlacements, _indicesHarnessPlacements);
+        final TableInfo _existingHarnessPlacements = TableInfo.read(db, "harness_placements");
+        if (!_infoHarnessPlacements.equals(_existingHarnessPlacements)) {
+          return new RoomOpenHelper.ValidationResult(false, "harness_placements(com.timlorne.wiringpro.data.db.HarnessPlacementEntity).\n"
+                  + " Expected:\n" + _infoHarnessPlacements + "\n"
+                  + " Found:\n" + _existingHarnessPlacements);
+        }
+        final HashMap<String, TableInfo.Column> _columnsHarnessCables = new HashMap<String, TableInfo.Column>(5);
+        _columnsHarnessCables.put("id", new TableInfo.Column("id", "TEXT", true, 1, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsHarnessCables.put("projectId", new TableInfo.Column("projectId", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsHarnessCables.put("fromConnectorId", new TableInfo.Column("fromConnectorId", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsHarnessCables.put("toConnectorId", new TableInfo.Column("toConnectorId", "TEXT", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        _columnsHarnessCables.put("lengthMm", new TableInfo.Column("lengthMm", "INTEGER", true, 0, null, TableInfo.CREATED_FROM_ENTITY));
+        final HashSet<TableInfo.ForeignKey> _foreignKeysHarnessCables = new HashSet<TableInfo.ForeignKey>(3);
+        _foreignKeysHarnessCables.add(new TableInfo.ForeignKey("projects", "CASCADE", "NO ACTION", Arrays.asList("projectId"), Arrays.asList("id")));
+        _foreignKeysHarnessCables.add(new TableInfo.ForeignKey("connectors", "CASCADE", "NO ACTION", Arrays.asList("fromConnectorId"), Arrays.asList("id")));
+        _foreignKeysHarnessCables.add(new TableInfo.ForeignKey("connectors", "CASCADE", "NO ACTION", Arrays.asList("toConnectorId"), Arrays.asList("id")));
+        final HashSet<TableInfo.Index> _indicesHarnessCables = new HashSet<TableInfo.Index>(3);
+        _indicesHarnessCables.add(new TableInfo.Index("index_harness_cables_projectId", false, Arrays.asList("projectId"), Arrays.asList("ASC")));
+        _indicesHarnessCables.add(new TableInfo.Index("index_harness_cables_fromConnectorId", false, Arrays.asList("fromConnectorId"), Arrays.asList("ASC")));
+        _indicesHarnessCables.add(new TableInfo.Index("index_harness_cables_toConnectorId", false, Arrays.asList("toConnectorId"), Arrays.asList("ASC")));
+        final TableInfo _infoHarnessCables = new TableInfo("harness_cables", _columnsHarnessCables, _foreignKeysHarnessCables, _indicesHarnessCables);
+        final TableInfo _existingHarnessCables = TableInfo.read(db, "harness_cables");
+        if (!_infoHarnessCables.equals(_existingHarnessCables)) {
+          return new RoomOpenHelper.ValidationResult(false, "harness_cables(com.timlorne.wiringpro.data.db.HarnessCableEntity).\n"
+                  + " Expected:\n" + _infoHarnessCables + "\n"
+                  + " Found:\n" + _existingHarnessCables);
+        }
         return new RoomOpenHelper.ValidationResult(true, null);
       }
-    }, "d9354899825e6f459a3cfb1e84e5e3bc", "385c6a2f1ccdd67d1469c1e22d4357d4");
+    }, "9ca96b082649df923e9f47c090f6d911", "6c4904ba41449dcca9d198a86fabf978");
     final SupportSQLiteOpenHelper.Configuration _sqliteConfig = SupportSQLiteOpenHelper.Configuration.builder(config.context).name(config.name).callback(_openCallback).build();
     final SupportSQLiteOpenHelper _helper = config.sqliteOpenHelperFactory.create(_sqliteConfig);
     return _helper;
@@ -189,7 +237,7 @@ public final class AppDatabase_Impl extends AppDatabase {
   protected InvalidationTracker createInvalidationTracker() {
     final HashMap<String, String> _shadowTablesMap = new HashMap<String, String>(0);
     final HashMap<String, Set<String>> _viewTables = new HashMap<String, Set<String>>(0);
-    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "projects","connectors","pins","nets");
+    return new InvalidationTracker(this, _shadowTablesMap, _viewTables, "projects","connectors","pins","nets","harness_placements","harness_cables");
   }
 
   @Override
@@ -209,6 +257,8 @@ public final class AppDatabase_Impl extends AppDatabase {
       _db.execSQL("DELETE FROM `connectors`");
       _db.execSQL("DELETE FROM `pins`");
       _db.execSQL("DELETE FROM `nets`");
+      _db.execSQL("DELETE FROM `harness_placements`");
+      _db.execSQL("DELETE FROM `harness_cables`");
       super.setTransactionSuccessful();
     } finally {
       super.endTransaction();
@@ -230,6 +280,7 @@ public final class AppDatabase_Impl extends AppDatabase {
     _typeConvertersMap.put(ConnectorDao.class, ConnectorDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(PinDao.class, PinDao_Impl.getRequiredConverters());
     _typeConvertersMap.put(NetDao.class, NetDao_Impl.getRequiredConverters());
+    _typeConvertersMap.put(HarnessDao.class, HarnessDao_Impl.getRequiredConverters());
     return _typeConvertersMap;
   }
 
@@ -300,6 +351,20 @@ public final class AppDatabase_Impl extends AppDatabase {
           _netDao = new NetDao_Impl(this);
         }
         return _netDao;
+      }
+    }
+  }
+
+  @Override
+  public HarnessDao harnessDao() {
+    if (_harnessDao != null) {
+      return _harnessDao;
+    } else {
+      synchronized(this) {
+        if(_harnessDao == null) {
+          _harnessDao = new HarnessDao_Impl(this);
+        }
+        return _harnessDao;
       }
     }
   }
