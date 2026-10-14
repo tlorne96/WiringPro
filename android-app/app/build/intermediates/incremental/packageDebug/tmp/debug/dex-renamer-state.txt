@@ -1,8 +1,9 @@
-#Wed Oct 14 15:41:23 AEDT 2026
+#Wed Oct 14 16:27:24 AEDT 2026
 base.0=/home/moth/Projects/wiringPro/wiringpro/android-app/app/build/intermediates/dex/debug/mergeExtDexDebug/classes.dex
 base.1=/home/moth/Projects/wiringPro/wiringpro/android-app/app/build/intermediates/dex/debug/mergeProjectDexDebug/0/classes.dex
 base.10=/home/moth/Projects/wiringPro/wiringpro/android-app/app/build/intermediates/dex/debug/mergeProjectDexDebug/9/classes.dex
 base.11=/home/moth/Projects/wiringPro/wiringpro/android-app/app/build/intermediates/dex/debug/mergeExtDexDebug/classes2.dex
+base.12=/home/moth/Projects/wiringPro/wiringpro/android-app/app/build/intermediates/dex/debug/mergeProjectDexDebug/5/classes.dex
 base.2=/home/moth/Projects/wiringPro/wiringpro/android-app/app/build/intermediates/dex/debug/mergeProjectDexDebug/1/classes.dex
 base.3=/home/moth/Projects/wiringPro/wiringpro/android-app/app/build/intermediates/dex/debug/mergeProjectDexDebug/10/classes.dex
 base.4=/home/moth/Projects/wiringPro/wiringpro/android-app/app/build/intermediates/dex/debug/mergeProjectDexDebug/12/classes.dex
@@ -15,6 +16,7 @@ path.0=classes.dex
 path.1=0/classes.dex
 path.10=9/classes.dex
 path.11=classes2.dex
+path.12=5/classes.dex
 path.2=1/classes.dex
 path.3=10/classes.dex
 path.4=12/classes.dex
@@ -27,6 +29,7 @@ renamed.0=classes.dex
 renamed.1=classes2.dex
 renamed.10=classes11.dex
 renamed.11=classes12.dex
+renamed.12=classes13.dex
 renamed.2=classes3.dex
 renamed.3=classes4.dex
 renamed.4=classes5.dex
