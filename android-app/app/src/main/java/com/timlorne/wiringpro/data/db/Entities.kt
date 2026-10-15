@@ -84,3 +84,60 @@ data class PinEntity(
     val label: String?
 )
 
+@Entity(
+    tableName = "harness_placements",
+    foreignKeys = [
+        ForeignKey(
+            entity = ProjectEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["projectId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = ConnectorEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["connectorId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index("projectId")]
+)
+data class HarnessPlacementEntity(
+    @PrimaryKey val connectorId: String,
+    val projectId: String,
+    val xDp: Float,
+    val yDp: Float
+)
+
+@Entity(
+    tableName = "harness_cables",
+    foreignKeys = [
+        ForeignKey(
+            entity = ProjectEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["projectId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = ConnectorEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["fromConnectorId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = ConnectorEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["toConnectorId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index("projectId"), Index("fromConnectorId"), Index("toConnectorId")]
+)
+data class HarnessCableEntity(
+    @PrimaryKey val id: String,
+    val projectId: String,
+    val fromConnectorId: String,
+    val toConnectorId: String,
+    val lengthMm: Int
+)
+

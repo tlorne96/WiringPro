@@ -143,13 +143,35 @@ interface NetDao {
     suspend fun findByName(projectId: String, name: String): NetEntity?
 }
 
+@Dao
+interface HarnessDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertPlacement(placement: HarnessPlacementEntity)
+
+    @Query("SELECT * FROM harness_placements WHERE projectId = :projectId")
+    fun observePlacements(projectId: String): Flow<List<HarnessPlacementEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertCable(cable: HarnessCableEntity)
+
+    @Query("SELECT * FROM harness_cables WHERE projectId = :projectId")
+    fun observeCables(projectId: String): Flow<List<HarnessCableEntity>>
+}
+
 // ---------------------------------------------------------------------
 // Database
 // ---------------------------------------------------------------------
 
 @Database(
-    entities = [ProjectEntity::class, ConnectorEntity::class, PinEntity::class, NetEntity::class],
-    version = 3,
+    entities = [
+        ProjectEntity::class,
+        ConnectorEntity::class,
+        PinEntity::class,
+        NetEntity::class,
+        HarnessPlacementEntity::class,
+        HarnessCableEntity::class
+    ],
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -158,6 +180,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun connectorDao(): ConnectorDao
     abstract fun pinDao(): PinDao
     abstract fun netDao(): NetDao
+    abstract fun harnessDao(): HarnessDao
 
     companion object {
         private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -172,6 +195,43 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS harness_placements (
+                        connectorId TEXT NOT NULL,
+                        projectId TEXT NOT NULL,
+                        xDp REAL NOT NULL,
+                        yDp REAL NOT NULL,
+                        PRIMARY KEY(connectorId),
+                        FOREIGN KEY(projectId) REFERENCES projects(id) ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(connectorId) REFERENCES connectors(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_harness_placements_projectId ON harness_placements(projectId)")
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS harness_cables (
+                        id TEXT NOT NULL,
+                        projectId TEXT NOT NULL,
+                        fromConnectorId TEXT NOT NULL,
+                        toConnectorId TEXT NOT NULL,
+                        lengthMm INTEGER NOT NULL,
+                        PRIMARY KEY(id),
+                        FOREIGN KEY(projectId) REFERENCES projects(id) ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(fromConnectorId) REFERENCES connectors(id) ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(toConnectorId) REFERENCES connectors(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_harness_cables_projectId ON harness_cables(projectId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_harness_cables_fromConnectorId ON harness_cables(fromConnectorId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_harness_cables_toConnectorId ON harness_cables(toConnectorId)")
+            }
+        }
+
         @Volatile private var instance: AppDatabase? = null
 
         fun getInstance(context: Context): AppDatabase =
@@ -182,6 +242,7 @@ abstract class AppDatabase : RoomDatabase() {
                     "wiringpro.db"
                 )
                     .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_3_4)
                     // Retain the fallback for development builds with unknown older schemas.
                     .fallbackToDestructiveMigration()
                     .build().also { instance = it }

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
@@ -159,7 +160,8 @@ fun ConnectorListScreen(
     onBack: () -> Unit,
     onAddConnector: () -> Unit,
     onOpenConnector: (String) -> Unit,
-    onViewLoom: () -> Unit
+    onViewLoom: () -> Unit,
+    onViewHarnessMap: () -> Unit
 ) {
     val connectors by viewModel.connectors.collectAsState()
     val projectName by viewModel.projectName.collectAsState()
@@ -210,6 +212,9 @@ fun ConnectorListScreen(
                     }
                     IconButton(onClick = onViewLoom) {
                         Icon(Icons.Filled.AccountTree, contentDescription = "View whole loom")
+                    }
+                    IconButton(onClick = onViewHarnessMap) {
+                        Icon(Icons.Filled.Map, contentDescription = "View harness map")
                     }
                 }
             )
